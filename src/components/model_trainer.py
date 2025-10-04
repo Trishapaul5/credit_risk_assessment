@@ -4,7 +4,7 @@ import numpy as np
 from dataclasses import dataclass
 
 # Import ML Algorithms
-from sklearn.linear_model import LogisticRegression # The financial industry standard
+from sklearn.linear_model import LogisticRegression 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from xgboost import XGBClassifier
@@ -37,9 +37,9 @@ class ModelTrainer:
             )
             
             # Define Model Dictionary
-            # Logistic Regression is essential due to its interpretability (used in Basel II/III)
             models = {
-                "Logistic Regression": Logisticેશન(random_state=42),
+                # FIX: Changed 'Logisticેશન' to 'LogisticRegression'
+                "Logistic Regression": LogisticRegression(random_state=42, max_iter=1000), 
                 "Decision Tree": DecisionTreeClassifier(random_state=42),
                 "Random Forest": RandomForestClassifier(random_state=42),
                 "Gradient Boosting": GradientBoostingClassifier(random_state=42),
@@ -65,8 +65,6 @@ class ModelTrainer:
                     best_model_name = name
                     best_model = models[name]
 
-            # Check for a reasonable threshold
-            # Since Total Cost is dataset-dependent, we only check if a model was found
             if best_model_name == "":
                 raise CustomException("No suitable model found (Check data or cost matrix setup)", sys)
 
@@ -81,30 +79,5 @@ class ModelTrainer:
             return best_model_name, best_model_score
 
         except Exception as e:
+            # Added max_iter=1000 to Logistic Regression to prevent convergence warnings/errors
             raise CustomException(e, sys)
-
-# --- Full Pipeline Execution (Requires DataIngestion and DataTransformation) ---
-if __name__ == '__main__':
-    from src.components.data_ingestion import DataIngestion
-    from src.components.data_transformation import DataTransformation
-    
-    # Run all components sequentially to test the full pipeline:
-    # try:
-    #     ingestion = DataIngestion()
-    #     train_path, test_path = ingestion.initiate_data_ingestion('data/german_credit.csv')
-        
-    #     transformation = DataTransformation()
-    #     train_arr, test_arr, preprocessor_path = transformation.initiate_data_transformation(
-    #         train_path, test_path
-    #     )
-        
-    #     trainer = ModelTrainer()
-    #     best_model_name, best_cost = trainer.initiate_model_trainer(train_arr, test_arr)
-        
-    #     logging.info(f"--- END-TO-END PIPELINE SUCCESSFUL ---")
-    #     logging.info(f"Best Model: {best_model_name}, Final Cost: {best_cost}")
-        
-    # except Exception as e:
-    #     logging.error(f"Pipeline failed: {e}")
-    #     pass
-    pass

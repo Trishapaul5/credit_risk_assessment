@@ -20,3 +20,4 @@ flask
 gunicorn
 # Used for managing environment variables (e.g., secret keys) during deployment
 python-dotenv
+xgboost

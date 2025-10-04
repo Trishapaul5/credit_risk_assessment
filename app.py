@@ -1,68 +1,82 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template
 import numpy as np
 import pandas as pd
-
-from src.pipeline.predict_pipeline import CustomData, PredictPipeline
-from src.exception import CustomException
 import sys
 import os
 
-# Initialize the Flask application
+from src.pipeline.predict_pipeline import CustomData, PredictPipeline
+from src.exception import CustomException
+from src.logger import logging
+
 application = Flask(__name__)
 app = application
 
-# Define the main prediction route
+# --- FIELD MAPPING for 11 Features ---
+FIELD_MAPPING = {
+    'age': 'person_age',
+    'income': 'person_income',
+    'ownership': 'person_home_ownership',
+    'emp_length': 'person_emp_length',
+    'intent': 'loan_intent',
+    'grade': 'loan_grade',
+    'loan_amount': 'loan_amnt',
+    'int_rate': 'loan_int_rate',
+    'percent_income': 'loan_percent_income',
+    'default_on_file': 'cb_person_default_on_file',
+    'cred_hist_length': 'cb_person_cred_hist_length'
+}
+
+@app.route('/', methods=['GET'])
+def index():
+    return render_template('home.html')
+
 @app.route('/predictdata', methods=['GET', 'POST'])
 def predict_datapoint():
     if request.method == 'GET':
-        # If GET, render the input form (you'll create this later)
         return render_template('home.html')
     else:
         try:
-            # 1. Capture Data from the Form/API
-            # Create a CustomData object by reading input fields
-            data = CustomData(
-                # NOTE: Replace 'request.form.get' keys with your actual HTML/API field names
-                Status_of_existing_checking_account=request.form.get('checking_status'),
-                Duration_in_month=int(request.form.get('duration')),
-                Credit_history=request.form.get('credit_history'),
-                Purpose=request.form.get('purpose'),
-                Credit_amount=int(request.form.get('credit_amount')),
-                # ... [Capture the remaining features] ...
-                Age_in_years=int(request.form.get('age')),
-                Foreign_worker=request.form.get('foreign_worker')
-            )
+            # 1. Capture Data from the Form
+            form_data = {}
+            for html_key, class_key in FIELD_MAPPING.items():
+                value = request.form.get(html_key)
+                
+                # Convert inputs to required types
+                if class_key in ['person_age', 'person_income', 'loan_amnt', 'cb_person_cred_hist_length']:
+                    form_data[class_key] = int(value) if value else 0
+                elif class_key in ['person_emp_length', 'loan_int_rate', 'loan_percent_income']:
+                    form_data[class_key] = float(value) if value else 0.0
+                else:
+                    form_data[class_key] = value
+
+            # 2. Instantiate CustomData with the 11 required arguments (kwargs)
+            data = CustomData(**form_data)
             
             # Convert captured data into a DataFrame
             pred_df = data.get_data_as_dataframe()
 
-            # 2. Run Prediction Pipeline
+            # 3. Run Prediction Pipeline
             predict_pipeline = PredictPipeline()
-            results = predict_pipeline.predict(pred_df) # This returns [0] or [1]
-
-            # 3. Financial Interpretation
+            results = predict_pipeline.predict(pred_df) # Returns [0] or [1]
             prediction = results[0]
-            
-            if prediction == 1:
-                # Predicted Bad Credit (Default)
-                recommendation = "Reject Loan: High Probability of Default (PD)."
-                cost_impact = "Risk of incurring a 5x financial loss (False Negative penalty)."
-            else:
-                # Predicted Good Credit (No Default)
-                recommendation = "Approve Loan: Low Probability of Default (PD)."
-                cost_impact = "Low risk of loss; minimizes 1x False Positive penalty."
 
-            # 4. Render Results
+            # 4. Financial Interpretation
+            if prediction == 1:
+                recommendation = "REJECT LOAN: High Risk of Default (PD = 1)"
+                cost_impact = "Warning: Approving this loan carries a significant **5x Misclassification Cost** (False Negative risk)."
+            else:
+                recommendation = "APPROVE LOAN: Low Risk of Default (PD = 0)"
+                cost_impact = "Expected Loss is minimized. Recommendation aligns with **1x Misclassification Cost** (False Positive risk)."
+
+            # 5. Render Results
             return render_template('home.html', 
                                    results=recommendation,
                                    prediction_status=cost_impact)
 
         except Exception as e:
-            # Log and handle any runtime errors
-            error_message = f"Prediction failed: {e}"
-            return render_template('home.html', results=error_message)
+            error_msg = f"System Error: {e}"
+            logging.error(error_msg, exc_info=True)
+            return render_template('home.html', results="System Error: An unexpected error occurred. Please check server logs.")
 
 if __name__ == "__main__":
-    # In a deployment environment (like AWS/Azure), you'll typically use gunicorn
-    # app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
     app.run(host="0.0.0.0", debug=True)

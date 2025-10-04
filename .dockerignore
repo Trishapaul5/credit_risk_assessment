@@ -1,0 +1,20 @@
+# Python bytecode
+*.pyc
+__pycache__
+.pytest_cache
+
+# Virtual Environment
+venv
+.env
+
+# Logs and Artifacts (generated files)
+logs
+
+# Development/Local files
+.git
+.gitignore
+.ipynb_checkpoints
+.DS_Store
+
+# Large data
+data
