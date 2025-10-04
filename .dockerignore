@@ -1,20 +1,24 @@
-# Python bytecode
-*.pyc
+# Create/Update .dockerignore
 __pycache__
-.pytest_cache
-
-# Virtual Environment
-venv
-.env
-
-# Logs and Artifacts (generated files)
-logs
-
-# Development/Local files
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+/venv
+/.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
 .git
 .gitignore
-.ipynb_checkpoints
+*.md
+*.txt
+!requirements.txt
+notebooks/
+tests/
+docs/
+*.ipynb
+.pytest_cache
 .DS_Store
-
-# Large data
-data

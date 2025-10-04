@@ -39,25 +39,45 @@ def predict_datapoint():
             # 1. Capture Data from the Form
             form_data = {}
             for html_key, class_key in FIELD_MAPPING.items():
-                value = request.form.get(html_key)
+                raw_value = request.form.get(html_key)
                 
-                # Convert inputs to required types
-                if class_key in ['person_age', 'person_income', 'loan_amnt', 'cb_person_cred_hist_length']:
-                    form_data[class_key] = int(value) if value else 0
-                elif class_key in ['person_emp_length', 'loan_int_rate', 'loan_percent_income']:
-                    form_data[class_key] = float(value) if value else 0.0
-                else:
-                    form_data[class_key] = value
+                # --- ROBUST INPUT HANDLING (Final Fail-Proof Logic) ---
+                
+                # Check 1: Handle Categorical Fields (strings, select options)
+                if class_key in ['person_home_ownership', 'loan_intent', 'loan_grade', 'cb_person_default_on_file']:
+                    # Pass the string directly. If it's missing, CustomData will receive None.
+                    form_data[class_key] = raw_value.strip() if raw_value else None
+                    continue # Move to the next field
 
-            # 2. Instantiate CustomData with the 11 required arguments (kwargs)
+                # Check 2: Handle Numerical Fields (int/float)
+                safe_value = None
+                if raw_value and raw_value.strip() != "":
+                    try:
+                        if class_key in ['person_age', 'person_income', 'loan_amnt', 'cb_person_cred_hist_length']:
+                            # Attempt to convert to Integer
+                            safe_value = int(float(raw_value.strip())) # Convert float first to handle '1.0'
+                        elif class_key in ['person_emp_length', 'loan_int_rate', 'loan_percent_income']:
+                            # Attempt to convert to Float
+                            safe_value = float(raw_value.strip())
+                    except ValueError:
+                        # CRASH PROTECTION: If user types "abc" or "10,000", safe_value remains None
+                        safe_value = None 
+                
+                # Assign the safe value (0 or 0.0 will be passed to CustomData if non-numeric or missing)
+                if class_key in ['person_age', 'person_income', 'loan_amnt', 'cb_person_cred_hist_length']:
+                    form_data[class_key] = safe_value if safe_value is not None else 0 
+                elif class_key in ['person_emp_length', 'loan_int_rate', 'loan_percent_income']:
+                    form_data[class_key] = safe_value if safe_value is not None else 0.0
+
+            # 2. Instantiate CustomData 
             data = CustomData(**form_data)
-            
-            # Convert captured data into a DataFrame
             pred_df = data.get_data_as_dataframe()
+            
+            logging.info(f"Input Data for Prediction (Cleaned):\n{pred_df}")
 
             # 3. Run Prediction Pipeline
             predict_pipeline = PredictPipeline()
-            results = predict_pipeline.predict(pred_df) # Returns [0] or [1]
+            results = predict_pipeline.predict(pred_df)
             prediction = results[0]
 
             # 4. Financial Interpretation
@@ -74,9 +94,10 @@ def predict_datapoint():
                                    prediction_status=cost_impact)
 
         except Exception as e:
-            error_msg = f"System Error: {e}"
+            # Catch exceptions that CustomData or the Pipeline might throw (e.g., missing artifact)
+            error_msg = f"Prediction failed due to unhandled error: {e}"
             logging.error(error_msg, exc_info=True)
-            return render_template('home.html', results="System Error: An unexpected error occurred. Please check server logs.")
+            return render_template('home.html', results=f"Application Error: {e.__class__.__name__}. Check server logs for detail.")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)
