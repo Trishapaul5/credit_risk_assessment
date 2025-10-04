@@ -1,0 +1,22 @@
+# --- Core Data Science Libraries ---
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+
+# --- Project Infrastructure & MLOps ---
+# Used for serialization/deserialization of complex scikit-learn pipelines (like ColumnTransformer)
+dill 
+# Used for creating class variables in configuration files (DataClass)
+# Note: dataclasses is part of standard Python 3.7+ library, but good to list if using an older version or specific dataclasses features.
+# If running Python 3.7+, this isn't strictly necessary but harmless:
+# dataclasses 
+
+# --- Web Framework & Deployment ---
+# Web framework for creating the prediction API
+flask
+# Production-grade WSGI HTTP Server (often required for AWS/Azure deployment)
+gunicorn
+# Used for managing environment variables (e.g., secret keys) during deployment
+python-dotenv
