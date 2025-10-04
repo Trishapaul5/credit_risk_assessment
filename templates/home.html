@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Credit Risk Assessment (PD Model)</title>
+</head>
+<body>
+    <h1>Loan Applicant Risk Assessment</h1>
+    <form action="{{ url_for('predict_datapoint') }}" method="post">
+        <label for="duration">Loan Duration (months):</label>
+        <input type="number" id="duration" name="duration" required><br><br>
+
+        <label for="credit_amount">Credit Amount (DM):</label>
+        <input type="number" id="credit_amount" name="credit_amount" required><br><br>
+
+        <label for="age">Age (years):</label>
+        <input type="number" id="age" name="age" required><br><br>
+
+        <label for="checking_status">Checking Account Status:</label>
+        <select id="checking_status" name="checking_status">
+            <option value="A11">Less than 0 DM</option>
+            <option value="A12">0 to 200 DM</option>
+            </select><br><br>
+
+        <input type="submit" value="Assess Risk">
+    </form>
+
+    {% if results %}
+        <h2>Prediction Result:</h2>
+        <p>{{ results }}</p>
+        <p><strong>Cost Impact:</strong> {{ prediction_status }}</p>
+    {% endif %}
+</body>
+</html>
