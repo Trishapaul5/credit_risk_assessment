@@ -1,6 +1,6 @@
 import os
 import sys
-import dill 
+import joblib  # CRITICAL: Replace dill with joblib for ML artifacts and compression
 import pandas as pd
 from sklearn.metrics import accuracy_score, confusion_matrix
 
@@ -10,25 +10,28 @@ from src.logger import logging
 # --- File Handling Functions ---
 
 def save_object(file_path: str, obj):
-    """Saves a Python object as a .pkl file using the dill library."""
+    """Saves a Python object as a .pkl file using joblib (with compression)."""
     try:
         dir_path = os.path.dirname(file_path)
         os.makedirs(dir_path, exist_ok=True)
         
-        with open(file_path, "wb") as file_obj:
-            dill.dump(obj, file_obj)
+        # Use joblib's native compression, level 3 is a good balance of speed/ratio.
+        # This replaces the old dill/open logic.
+        joblib.dump(obj, file_path, compress=('gzip', 3))
 
     except Exception as e:
         raise CustomException(e, sys)
+
 
 def load_object(file_path: str):
-    """Loads a Python object from a .pkl file using the dill library."""
+    """Loads a Python object from a .pkl file using joblib."""
     try:
-        with open(file_path, "rb") as file_obj:
-            return dill.load(file_obj)
-            
+        # joblib automatically handles reading compressed files
+        return joblib.load(file_path)
+
     except Exception as e:
         raise CustomException(e, sys)
+
 
 # --- Financial Evaluation Function ---
 

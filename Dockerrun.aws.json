@@ -1,7 +1,7 @@
 {
   "AWSEBDockerrunVersion": "1",
   "Image": {
-    "Name": "trishapaul5/credit-risk-pd-model:final-stable-v4",
+    "Name": "trishapaul5/credit-risk-pd-model:final-deployment-v3",
     "Update": "true"
   },
   "Ports": [

@@ -7,7 +7,14 @@ import os
 
 class PredictPipeline:
     def __init__(self):
-        pass
+        # Define the exact list of columns used during training
+        self.REQUIRED_COLUMNS = [
+            'person_age', 'person_income', 'person_home_ownership', 
+            'person_emp_length', 'loan_intent', 'loan_grade', 
+            'loan_amnt', 'loan_int_rate', 'loan_percent_income', 
+            'cb_person_default_on_file', 'cb_person_cred_hist_length'
+        ]
+        # Removed redundant 'pass' statement
 
     def predict(self, features: pd.DataFrame):
         """
@@ -16,6 +23,14 @@ class PredictPipeline:
         :return: Prediction array (0 or 1).
         """
         try:
+            # CRITICAL FIX: Validate that input features contain all required columns
+            missing_cols = [col for col in self.REQUIRED_COLUMNS if col not in features.columns]
+            if missing_cols:
+                raise CustomException(f"Input DataFrame is missing required columns: {missing_cols}", sys)
+                
+            # Enforce column order before prediction
+            features = features[self.REQUIRED_COLUMNS]
+
             # Define paths
             model_path = os.path.join("artifacts", "model.pkl")
             preprocessor_path = os.path.join('artifacts', "preprocessor.pkl")
@@ -32,12 +47,12 @@ class PredictPipeline:
             return preds
 
         except Exception as e:
-            raise CustomException(e, sys)
+            # Raise the exception, which the calling app.py will catch and log fully
+            raise CustomException(f"Prediction Pipeline Crash: {e}", sys)
 
 class CustomData:
-    """
-    Class to map raw input data (from a web form/API) into a DataFrame with the 11 required columns.
-    """
+    # ... (CustomData class remains the same as it is instantiated with clean data from app.py)
+    
     def __init__(self, 
                  person_age: int,
                  person_income: int,
@@ -65,9 +80,8 @@ class CustomData:
         self.cb_person_cred_hist_length = cb_person_cred_hist_length
 
     def get_data_as_dataframe(self):
-        """Converts user input variables into a single Pandas DataFrame with correct column order."""
+        """Converts user input variables into a single Pandas DataFrame."""
         try:
-            # Keys must match the ColumnTransformer's expected input order/names
             custom_data_input_dict = {
                 'person_age': [self.person_age],
                 'person_income': [self.person_income],
@@ -84,4 +98,4 @@ class CustomData:
             return pd.DataFrame(custom_data_input_dict)
             
         except Exception as e:
-            raise CustomException(e, sys)
+            raise CustomException(f"CustomData Conversion Error: {e}", sys)

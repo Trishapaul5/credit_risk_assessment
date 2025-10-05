@@ -22,3 +22,4 @@ docs/
 *.ipynb
 .pytest_cache
 .DS_Store
+data/

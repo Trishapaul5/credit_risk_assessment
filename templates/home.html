@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Credit Risk Assessment (PD Model)</title>
     <style>
-        /* Global Styles (Same as before) */
-        body { font-family: -apple-system, BlinkMacMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 40px; }
-        .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 40px; }
+        .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         h1 { color: #004d99; text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
@@ -19,6 +18,7 @@
         .result-box h3 { margin-top: 0; font-size: 24px; }
         .result-box.approve { background-color: #e6ffe6; border: 2px solid #00b300; color: #006600; }
         .result-box.reject { background-color: #ffe6e6; border: 2px solid #ff0000; color: #cc0000; }
+        .result-box.error { background-color: #fff0f0; border: 2px solid #ff0000; color: #990000; text-align: left; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
         .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     </style>
 </head>
@@ -26,24 +26,21 @@
     <div class="container">
         <h1>Loan Applicant Risk Assessment 🏦</h1>
         <form action="{{ url_for('predict_datapoint') }}" method="post">
-            
             <div class="two-columns">
+                <!-- Left Column -->
                 <div>
                     <div class="form-group">
                         <label for="age">Age (in years):</label>
                         <input type="number" id="age" name="age" required min="18">
                     </div>
-
                     <div class="form-group">
                         <label for="income">Annual Income:</label>
                         <input type="number" id="income" name="income" required min="1000">
                     </div>
-
                     <div class="form-group">
                         <label for="emp_length">Employment Length (Years):</label>
                         <input type="number" id="emp_length" name="emp_length" required min="0" step="0.5">
                     </div>
-
                     <div class="form-group">
                         <label for="ownership">Home Ownership:</label>
                         <select id="ownership" name="ownership" required>
@@ -54,7 +51,6 @@
                             <option value="OTHER">Other</option>
                         </select>
                     </div>
-
                     <div class="form-group">
                         <label for="intent">Loan Intent:</label>
                         <select id="intent" name="intent" required>
@@ -67,7 +63,6 @@
                             <option value="HOMEIMPROVEMENT">Home Improvement</option>
                         </select>
                     </div>
-
                     <div class="form-group">
                         <label for="grade">Loan Grade:</label>
                         <select id="grade" name="grade" required>
@@ -83,22 +78,20 @@
                     </div>
                 </div>
 
+                <!-- Right Column -->
                 <div>
                     <div class="form-group">
                         <label for="loan_amount">Loan Amount:</label>
                         <input type="number" id="loan_amount" name="loan_amount" required min="500">
                     </div>
-
                     <div class="form-group">
                         <label for="int_rate">Interest Rate (%):</label>
                         <input type="number" id="int_rate" name="int_rate" required min="5" max="25" step="0.01">
                     </div>
-
                     <div class="form-group">
                         <label for="percent_income">Loan % of Income (0.0 to 1.0):</label>
                         <input type="number" id="percent_income" name="percent_income" required min="0" max="1" step="0.01">
                     </div>
-
                     <div class="form-group">
                         <label for="default_on_file">Default on File:</label>
                         <select id="default_on_file" name="default_on_file" required>
@@ -107,7 +100,6 @@
                             <option value="N">No</option>
                         </select>
                     </div>
-
                     <div class="form-group">
                         <label for="cred_hist_length">Credit History Length (Years):</label>
                         <input type="number" id="cred_hist_length" name="cred_hist_length" required min="2">
@@ -119,12 +111,20 @@
         </form>
 
         {% if results %}
-            {% set result_class = 'approve' if 'APPROVE' in results else 'reject' %}
-            <div class="result-box {{ result_class }}">
-                <h3>Assessment Outcome:</h3>
-                <p style="font-size: 1.1em; font-weight: bold;">{{ results }}</p>
-                <p style="font-size: 0.9em; margin-top: 10px;">{{ prediction_status }}</p>
-            </div>
+            {% if 'Application Error' in results %}
+                <div class="result-box error">
+                    <h3>Error Occurred:</h3>
+                    <p>{{ results }}</p>
+                    <pre>{{ prediction_status }}</pre>
+                </div>
+            {% else %}
+                {% set result_class = 'approve' if 'APPROVE' in results else 'reject' %}
+                <div class="result-box {{ result_class }}">
+                    <h3>Assessment Outcome:</h3>
+                    <p style="font-size: 1.1em; font-weight: bold;">{{ results }}</p>
+                    <p style="font-size: 0.9em; margin-top: 10px;">{{ prediction_status }}</p>
+                </div>
+            {% endif %}
         {% endif %}
     </div>
 </body>
